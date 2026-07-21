@@ -1,0 +1,14 @@
+generator,cpu,nic,mode,ports,frame_bytes_pre_fcs,wire_bytes,rate_mpps,pct_line_rate,metric,notes
+flame1,AMD Ryzen 7 5800X,ConnectX-5 Ex 100G,single-port,1,64,68,142.0,100,TX,68B wire = 100% of 142.05 Mpps line rate
+flame1,AMD Ryzen 7 5800X,ConnectX-5 Ex 100G,single-port,1,60,64,147.4,99,TX,canonical 64B incl FCS; 99% of 148.8 Mpps
+lava1,AMD Ryzen 9 9950X,ConnectX-7 200G@100G,single-port,1,64,68,142.0,100,TX,68B wire = 100% line rate
+lava1,AMD Ryzen 9 9950X,ConnectX-7 200G@100G,single-port,1,60,64,147.4,99,TX,canonical 64B incl FCS
+lava1,AMD Ryzen 9 9950X,ConnectX-7 200G@100G,dual-port-1instance,2,64,68,185.0,65,TX,one instance shares cores across both ports; stalls
+lava1,AMD Ryzen 9 9950X,ConnectX-7 200G@100G,dual-port-2instance,2,64,68,278.0,98,TX,two split-core instances; ~device ceiling of the shared CX-7 packet engine
+lava1,AMD Ryzen 9 9950X,ConnectX-7 200G,single-port,1,64,68,274.0,96,TX,200G peer: single-port hits the CX-7 packet-engine ceiling (~274) not the 142 100G line rate
+lava1,AMD Ryzen 9 9950X,ConnectX-7 200G,single-port,1,1500,1524,16.4,100,TX,1500B at 200G = full line rate; low pps so no packet-engine cap
+lava1,AMD Ryzen 9 9950X,ConnectX-7 200G,dual-port-2instance,2,1500,1524,32.8,100,TX,full 2x200G=400G wire; bandwidth-bound not packet-engine bound
+lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (2 cards Gen5 x8),dual-card-2instance,2,64,68,282.0,99,TX,two SEPARATE cards = two engines; each hits 100G line rate (141); flow-control OFF required
+lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (2 cards Gen5 x8),dual-card-2instance,2,60,64,296.1,99,TX,two cards 60B; ~148/card; 99.5% of 297.6
+lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (2 cards Gen5 x8),single-card,1,64,68,141.9,100,TX,single card 100G = full line rate (flow-control OFF)
+lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (4 ports 2 per card),quad-port-2instance,4,64,68,505.0,89,TX,both ports of each card (2 to server1 + 2 to Mikrotik); all 16 cores; ~126/port; CPU-bound
