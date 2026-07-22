@@ -1,8 +1,11 @@
 # lava1 — Ryzen 9950X + 2× ConnectX-7
 
-**Current config (2026-07-22):** two *separate* CX-7 cards, one cabled port each, linked
-at 100 G to server1's two CX-5 cards. Two engines reach **~282 Mpps = 100 % of 2×100 G**
-at 64 B (see [Two cards](#two-cards--200-g-at-true-line-rate-2-connectx-7)); minimal-core
+**Current config (2026-07-22):** two *separate* CX-7 cards, **both ports of each cabled** —
+the `.1` ports to server1's two CX-5 cards, the `.0` ports to a Mikrotik CRS504 switch.
+Two engines reach **~282 Mpps = 100 % of 2×100 G** at 64 B on the server1 pair (see
+[Two cards](#two-cards--200-g-at-true-line-rate-2-connectx-7)); driving **all four ports**
+peaks at **~558 Mpps = 98.2 % of 400 G** (the 2× CX-7 engine ceiling — see
+[Max total TX](#max-total-tx--all-four-ports-at-the-engine-ceiling-558-mpps)). Minimal-core
 and 1500 B / 400 G results are below.
 
 ## Server configuration
@@ -214,26 +217,72 @@ Ryzen 9950X — 16 physical cores (each = 2 HT threads)
 (**16 of 32 threads unused**). So 200 G leaves real spare CPU. `twocard_setup.sh` defaults
 to `NWORK=6`.
 
-### Max total TX — spend the spare cores on the second ports (~505 Mpps)
+### Max total TX — all four ports at the engine ceiling (~558 Mpps)
 
 Each CX-7 card has two ports: the `.1` ports flood server1's CX-5 cards, the `.0` ports
 flood a Mikrotik CRS504 switch. Drive **both ports of each card** (still one instance per
-card — mlx5 needs one primary process per card, so 4 separate instances is impossible),
-14 workers each = all 16 cores:
+card — mlx5 needs one primary process per card, so 4 separate instances is impossible).
 
-| Port | Destination | 64 B TX |
-|------|-------------|---------|
-| card 1 · `01:00.1` | server1 CX-5 | ~128 Mpps |
-| card 1 · `01:00.0` | Mikrotik | ~128 Mpps |
-| card 2 · `02:00.1` | server1 CX-5 | ~124 Mpps |
-| card 2 · `02:00.0` | Mikrotik | ~124 Mpps |
-| **TOTAL** | | **~505 Mpps** |
+**The generation profile dominates the ceiling here.** A per-packet **field-engine VM**
+(randomising the source IP on every packet — what a DUT RSS test needs) costs ~9 % of CPU
+and caps the total at **~512 Mpps** (per-port 124–131, CPU-bound). A **static single
+packet** (no VM — TRex's cheapest TX path) removes that cost and every port jumps to the
+hardware **engine ceiling**:
 
-Spending the spare cores on the second ports nearly **doubles total TX (282 → ~505 Mpps
-≈ 355 Gbps of 64 B)** — the whole 16-core CPU is now busy. Per-port drops from 141 to
-~126 (each card's engine *and* cores are now shared across its two ports), and the total
-is **CPU-bound**: 4×100 G line rate (568 Mpps) is past the 9950X's 16 cores.
-(`flame/conf/bothports_setup.sh`.)
+| Port | Destination | 64 B randomised-src | 64 B static |
+|------|-------------|---------------------|-------------|
+| card 1 · `01:00.1` | server1 CX-5 | ~131 Mpps | 139.5 Mpps |
+| card 1 · `01:00.0` | Mikrotik | ~131 Mpps | 139.5 Mpps |
+| card 2 · `02:00.1` | server1 CX-5 | ~125 Mpps | 139.4 Mpps |
+| card 2 · `02:00.0` | Mikrotik | ~125 Mpps | 139.4 Mpps |
+| **TOTAL** | | **~512 Mpps** | **~558 Mpps** |
+
+**558 Mpps = 98.2 % of the 568 Mpps (400 G) 4×100 G line rate** — every port at ~139.5,
+i.e. each card at its full **~279 Mpps engine ceiling** (2× a single dual-port CX-7's 278).
+That is the hardware wall, confirmed three ways:
+
+- **Engine-bound, not CPU.** Only **6 workers per instance (12 of the 32 threads)** are
+  needed for the full 558: 3 / 4 / 5 workers scale up CPU-bound (180 / 238 / 209 Mpps),
+  6 reaches 558 and 8–14 hold it. `--mbuf-factor 4` adds nothing.
+- **More cores per card *hurt*.** One card with 30 workers on its two TX rings drops to
+  **259 Mpps** (ring over-subscription) vs **279** at 6–14 workers — throwing cores at a
+  card past its engine only adds contention.
+- **The last 1.8 % needs a third engine.** 568 Mpps would put each port at 142 = each card
+  at 284, past the 279 engine. Two CX-7 engines cap at ~558; the full 400 G at 64 B needs a
+  **3rd CX-7** or a **ConnectX-8** (~300 Mpps/card in NVIDIA's
+  [DPDK 25.03 report](https://fast.dpdk.org/doc/perf/DPDK_25_03_NVIDIA_NIC_performance_report.pdf)).
+
+So the box has **huge spare CPU**: the static max-TX (`flame/conf/maxtx_push.py`) hits 558
+with just 6 workers/card, leaving cores 7 & 15 and every HT sibling idle (14 of 32 threads
+unused). The randomised-VM flood (`bothports_push.py`) spends all 14 workers/card for its
+512. Either way the NIC engine, not the 9950X, is the wall. (`flame/conf/bothports_setup.sh`.)
+
+### Scaling beyond 558 — more cards?
+
+Because throughput scales with the number of **engines (cards)**, not ports — each CX-7
+delivers ~279 Mpps whether one port or two — **more cards is the only way up, and it scales
+~linearly**. Each added CX-7 = +279 Mpps at 64 B. What stops us on *this* box is the host,
+not the idea:
+
+| Limit on the 9950X / AM5 | Ceiling it imposes |
+|--------------------------|--------------------|
+| **PCIe lanes** — board splits the CPU x16 into x8 + x8 for the 2 cards; AM5 has ~24 usable Gen5 lanes (GPU + NVMe take the rest) | ~2, maybe 3, x8 slots |
+| **CPU cores** — static TX needs **6 cores/card** (the measured floor); 16 cores feed ~2 cards (12c) with 2 free | ~2 cards for static; a 3rd would need 18 cores |
+
+So **2 cards (558 Mpps) is this platform's practical peak**. To go higher, change the
+platform or the NIC:
+
+- **ConnectX-8** — NVIDIA's DPDK 25.03 report shows ~**300 Mpps/card** at 64 B, so **2× CX-8
+  = ~600 Mpps > 568**: two CX-8 cards would deliver the **full 400 G at 64 B** on a board
+  with two x8 Gen5 slots (no extra cores needed — still engine-bound).
+- **More CX-7 on a big platform** — a many-lane, many-core host (Threadripper / EPYC) with
+  the cores to spare (6/card) and the slots (x8 each) scales ~linearly: **3× CX-7 ≈ 837, 4×
+  ≈ 1116 Mpps**. The generator software already supports it (one TRex instance per card);
+  it is purely a hardware question of lanes + cores.
+
+Bottom line for the team: **on the 9950X we are at the 2-card ceiling (558 / 98 % of 400 G).
+Full 400 G at 64 B, or beyond, needs either 2× ConnectX-8 or ≥3× ConnectX-7 on a
+higher-lane/‑core platform.**
 
 ## Tweaks
 

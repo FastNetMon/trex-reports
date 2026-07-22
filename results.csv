@@ -11,4 +11,5 @@ lava1,AMD Ryzen 9 9950X,ConnectX-7 200G,dual-port-2instance,2,1500,1524,32.8,100
 lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (2 cards Gen5 x8),dual-card-2instance,2,64,68,282.0,99,TX,two SEPARATE cards = two engines; each hits 100G line rate (141); flow-control OFF required
 lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (2 cards Gen5 x8),dual-card-2instance,2,60,64,296.1,99,TX,two cards 60B; ~148/card; 99.5% of 297.6
 lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (2 cards Gen5 x8),single-card,1,64,68,141.9,100,TX,single card 100G = full line rate (flow-control OFF)
-lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (4 ports 2 per card),quad-port-2instance,4,64,68,505.0,89,TX,both ports of each card (2 to server1 + 2 to Mikrotik); all 16 cores; ~126/port; CPU-bound
+lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (4 ports 2 per card),quad-port-2instance-static,4,64,68,558.0,98,TX,both ports of each card (2 to server1 + 2 to Mikrotik) static packet; ~139.5/port = 2x279 engine ceiling; only 6 workers/card needed (engine-bound not CPU)
+lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (4 ports 2 per card),quad-port-2instance-randsrc,4,64,68,512.0,90,TX,same 4 ports with per-packet random-src field engine (DUT RSS profile); CPU-bound ~9% below static; all 14 workers/card

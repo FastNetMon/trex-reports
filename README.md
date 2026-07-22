@@ -7,7 +7,7 @@ hardware. Two generators are documented:
 | Generator | CPU | NIC | Peak (64 B) |
 |-----------|-----|-----|-------------|
 | **[flame1](flame1.md)** | AMD Ryzen 7 5800X (8C/16T) | ConnectX-5 Ex, dual-port 100 G | **142 Mpps** single-port (100 % line rate) |
-| **[lava1](lava1.md)**   | AMD Ryzen 9 9950X (16C/32T, Zen 5) | **2× ConnectX-7** (both ports each → server1 + Mikrotik) | **~282 Mpps** at 2×100 G line rate · **~505 Mpps** total (4 ports) · **400 G @ 1500 B** |
+| **[lava1](lava1.md)**   | AMD Ryzen 9 9950X (16C/32T, Zen 5) | **2× ConnectX-7** (both ports each → server1 + Mikrotik) | **~282 Mpps** at 2×100 G line rate · **~558 Mpps** total (4 ports, 98 % of 400 G) · **400 G @ 1500 B** |
 
 ## What "line rate" means at 64 B
 
@@ -38,8 +38,10 @@ flowchart LR
 
 **2. lava1 — 2× ConnectX-7, up to 4×100 G (current).** Two cards, both ports each. The
 `.1` ports flood server1's 2× ConnectX-5 (2×100 G at line rate); the `.0` ports flood a
-Mikrotik CRS504. Two TRex instances (one per card) drive all four ports → **~505 Mpps
-total** (2×100 G line rate = 282 Mpps with cores to spare).
+Mikrotik CRS504. Two TRex instances (one per card) drive all four ports → **~558 Mpps
+total** with a static 64 B packet (98 % of 400 G; each card at its ~279 engine ceiling),
+or ~512 Mpps with a per-packet randomised-src flood. 2×100 G line rate = 282 Mpps with
+cores to spare.
 
 ```mermaid
 flowchart LR
@@ -60,6 +62,33 @@ flowchart LR
   B0 == "100 G" ==> M
 ```
 
+### Cores per port
+
+At the **peak all-four-port config (static 64 B, ~558 Mpps)** each 100 G port needs only
+**~3 worker cores**: one instance per card drives *both* its ports, and just **6 workers per
+card** (cores 1–6 / 9–14) saturate the card's ~279 Mpps packet engine. Masters + latency
+share cores 0 / 8 via HT; **cores 7, 15 and every HT sibling stay idle** — only 14 of the
+32 threads do any work.
+
+```mermaid
+flowchart LR
+  subgraph CPU["Ryzen 9950X · 16 cores — static 64 B, all 4 ports = ~558 Mpps"]
+    direction TB
+    A["card 1 instance<br/>ctrl: core 0<br/>6 workers: cores 1-6"]
+    B["card 2 instance<br/>ctrl: core 8<br/>6 workers: cores 9-14"]
+    F["FREE: cores 7, 15 +<br/>all 16 HT siblings<br/>(only 14 of 32 threads used)"]
+  end
+  A --> A1["01:00.1 → server1<br/>139 Mpps"]
+  A --> A0["01:00.0 → Mikrotik<br/>139 Mpps"]
+  B --> B1["02:00.1 → server1<br/>139 Mpps"]
+  B --> B0["02:00.0 → Mikrotik<br/>139 Mpps"]
+```
+
+Each card's 6 workers serve both its ports (≈3 cores/port). A **randomised-src flood**
+(per-packet field engine, for DUT RSS tests) is ~9 % more expensive per packet, so it needs
+all 14 workers/card and caps ~9 % lower (~512 Mpps) — see
+[lava1.md](lava1.md#max-total-tx--all-four-ports-at-the-engine-ceiling-558-mpps).
+
 ## Key findings
 
 - A single fast core does ~35 Mpps of TX; **~4–5 cores per 100 G port** reaches line rate.
@@ -79,10 +108,20 @@ flowchart LR
   (two engines) do **~282 Mpps at 64 B** (~100% of 2×100 G), each card at its full
   141 Mpps, vs one dual-port card's shared-engine 278 (98%). Requires **flow control
   OFF** — see [lava1.md](lava1.md#two-cards--200-g-at-true-line-rate-2-connectx-7).
-- **Minimal cores, then spend the spare on more ports.** 2×100 G line rate needs only
-  6 workers/instance (12 of 16 cores). Driving *both* ports of each card (server1 + a
-  Mikrotik switch — still 2 instances, as mlx5 caps at one process per card) uses all
-  16 cores for **~505 Mpps total** at 64 B (~355 Gbps), CPU-bound.
+- **Four ports peak at the engine ceiling, ~558 Mpps.** Driving *both* ports of each card
+  (server1 + a Mikrotik switch — still 2 instances, as mlx5 caps at one process per card)
+  with a **static 64 B packet** hits **~558 Mpps = 98.2 % of 400 G** — every port at ~139.5,
+  each card at its full ~279 engine. It is **engine-bound, not CPU-bound**: just 6 workers/
+  card reach it (14 of 32 threads), `--mbuf-factor` adds nothing, and 30 workers on one card
+  *drop* to 259 (ring over-subscription). The last 1.8 % to 568 needs a 3rd NIC engine.
+- **Per-packet randomisation costs ~9 %.** The same 4-port setup with a field-engine flood
+  (random src IP every packet, for DUT RSS tests) is CPU-bound at **~512 Mpps** — the static
+  vs randomised gap is the generator's per-packet rewrite cost, not a NIC limit.
+- **Throughput scales with cards, not ports — ~279 Mpps per CX-7 engine.** More cards adds
+  ~linearly (+279 each), but the 9950X/AM5 caps at **2 cards** (PCIe x8+x8, and 6 cores/card).
+  Full 400 G at 64 B needs **2× ConnectX-8** (~300/card → ~600) or **≥3× CX-7 on a
+  higher-lane/-core host** (3× ≈ 837, 4× ≈ 1116 Mpps) — see
+  [lava1.md](lava1.md#scaling-beyond-558--more-cards).
 
 ## Repository layout
 
