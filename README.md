@@ -117,6 +117,11 @@ all 14 workers/card and caps ~9 % lower (~512 Mpps) — see
 - **Per-packet randomisation costs ~9 %.** The same 4-port setup with a field-engine flood
   (random src IP every packet, for DUT RSS tests) is CPU-bound at **~512 Mpps** — the static
   vs randomised gap is the generator's per-packet rewrite cost, not a NIC limit.
+- **At 1500 B the same 4 ports hit the full 400 G.** The 558 Mpps wall is a 64 B *packet-engine*
+  limit; at 1500 B the packet rate is only ~8 Mpps/port so it's pure **bandwidth** — all four
+  ports fill 100 G for **32.68 Mpps = ~400 Gbps (99.6 % of 4×100 G line rate)**. It's link-bound,
+  not generator-bound: `mult=200%` doesn't budge it, so the 100 G peers are the wall (the CX-7
+  cards are 200 G-capable). See [lava1.md](lava1.md#big-frames-all-four-ports-reach-400-g-at-1500-b).
 - **Throughput scales with cards, not ports — ~279 Mpps per CX-7 engine.** More cards adds
   ~linearly (+279 each), but the 9950X/AM5 caps at **2 cards** (PCIe x8+x8, and 6 cores/card).
   Full 400 G at 64 B needs **2× ConnectX-8** (~300/card → ~600) or **≥3× CX-7 on a

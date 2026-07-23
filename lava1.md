@@ -257,6 +257,32 @@ with just 6 workers/card, leaving cores 7 & 15 and every HT sibling idle (14 of 
 unused). The randomised-VM flood (`bothports_push.py`) spends all 14 workers/card for its
 512. Either way the NIC engine, not the 9950X, is the wall. (`flame/conf/bothports_setup.sh`.)
 
+### Big frames: all four ports reach 400 G at 1500 B
+
+The 558 Mpps ceiling is a **64 B packet-engine** limit — it has nothing to do with bandwidth
+(558 Mpps × 68 B ≈ 304 Gbps of the 400 Gbps of wire). Switch to **1500 B** and the packet
+rate collapses to ~8 Mpps/port, far below the engine, so the wall becomes pure **bandwidth**
+and every port fills its 100 G:
+
+| Port | Destination | 1500 B TX |
+|------|-------------|-----------|
+| card 1 · `01:00.1` | server1 CX-5 | 8.17 Mpps |
+| card 1 · `01:00.0` | Mikrotik | 8.17 Mpps |
+| card 2 · `02:00.1` | server1 CX-5 | 8.17 Mpps |
+| card 2 · `02:00.0` | Mikrotik | 8.17 Mpps |
+| **TOTAL** | | **32.68 Mpps = ~400 Gbps** |
+
+**32.68 Mpps = 99.6 % of the 32.81 Mpps 4×100 G line rate** (8.20 Mpps/port), i.e. the full
+**400 G** across all four ports — with cores to spare (a 1500 B stream needs ~1 worker/port).
+This is the **hard max** here, and it is **link-bound, not generator-bound**: pushing TRex to
+`mult=200%` leaves every port pinned at the same 8.17 Mpps, so the 100 G peers (server1's CX-5,
+the Mikrotik) are the wall — the CX-7 cards themselves are 200 G-capable and idle-cored. To go
+past 400 G at 1500 B you would need 200 G peers, not more cores.
+
+So the same 4-port setup is **packet-engine-limited at 64 B (558 Mpps ≈ 304 G of frames)** but
+**bandwidth-limited at true 400 G line rate at 1500 B**. Drive it with
+`flame/conf/maxtx_push.py PKTSIZE=1500`.
+
 ### Scaling beyond 558 — more cards?
 
 Because throughput scales with the number of **engines (cards)**, not ports — each CX-7
