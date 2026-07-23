@@ -257,31 +257,33 @@ with just 6 workers/card, leaving cores 7 & 15 and every HT sibling idle (14 of 
 unused). The randomised-VM flood (`bothports_push.py`) spends all 14 workers/card for its
 512. Either way the NIC engine, not the 9950X, is the wall. (`flame/conf/bothports_setup.sh`.)
 
-### Big frames: all four ports reach 400 G at 1500 B
+### Frame-size sweep: 64 B, IMIX, 1500 B (all four ports)
 
-The 558 Mpps ceiling is a **64 B packet-engine** limit — it has nothing to do with bandwidth
-(558 Mpps × 68 B ≈ 304 Gbps of the 400 Gbps of wire). Switch to **1500 B** and the packet
-rate collapses to ~8 Mpps/port, far below the engine, so the wall becomes pure **bandwidth**
-and every port fills its 100 G:
+The 558 Mpps ceiling is a **64 B packet-engine** limit, not a bandwidth one (558 Mpps × 68 B
+≈ 304 Gbps of the 400 Gbps of wire). Grow the frame and the packet rate drops below the engine,
+so the wall becomes pure **bandwidth** and all four ports fill their 100 G — for realistic
+(IMIX) *and* large frames alike:
 
-| Port | Destination | 1500 B TX |
-|------|-------------|-----------|
-| card 1 · `01:00.1` | server1 CX-5 | 8.17 Mpps |
-| card 1 · `01:00.0` | Mikrotik | 8.17 Mpps |
-| card 2 · `02:00.1` | server1 CX-5 | 8.17 Mpps |
-| card 2 · `02:00.0` | Mikrotik | 8.17 Mpps |
-| **TOTAL** | | **32.68 Mpps = ~400 Gbps** |
+| Profile (4 ports) | Per port | Total | L1 rate | Bound by |
+|-------------------|----------|-------|---------|----------|
+| 64 B static | 139.5 Mpps | **558 Mpps** | ~304 Gbps | CX-7 packet **engine** (2× ~279) |
+| **IMIX** (7:4:1 of 64/570/1518, avg 354 B) | 32.9 Mpps | **131.7 Mpps** | **~398 Gbps** | **bandwidth** (100 G/port) |
+| 1500 B | 8.17 Mpps | **32.68 Mpps** | **~398 Gbps** | **bandwidth** (100 G/port) |
 
-**32.68 Mpps = 99.6 % of the 32.81 Mpps 4×100 G line rate** (8.20 Mpps/port), i.e. the full
-**400 G** across all four ports — with cores to spare (a 1500 B stream needs ~1 worker/port).
-This is the **hard max** here, and it is **link-bound, not generator-bound**: pushing TRex to
-`mult=200%` leaves every port pinned at the same 8.17 Mpps, so the 100 G peers (server1's CX-5,
-the Mikrotik) are the wall — the CX-7 cards themselves are 200 G-capable and idle-cored. To go
-past 400 G at 1500 B you would need 200 G peers, not more cores.
+Both **IMIX and 1500 B reach ~400 G** (99.6 % of the 4×100 G line rate, ~99.6 Gbps/port) — so
+*any* realistic traffic saturates the pipe; only worst-case 64 B is packet-rate-limited. It is
+**link-bound, not generator-bound**: at 1500 B, pushing TRex to `mult=200%` leaves every port
+pinned at 8.17 Mpps, so the 100 G peers (server1's CX-5, the Mikrotik) are the wall — the CX-7
+cards are 200 G-capable and idle-cored. To exceed 400 G you'd need 200 G peers, not more cores.
 
-So the same 4-port setup is **packet-engine-limited at 64 B (558 Mpps ≈ 304 G of frames)** but
-**bandwidth-limited at true 400 G line rate at 1500 B**. Drive it with
-`flame/conf/maxtx_push.py PKTSIZE=1500`.
+> **How current is IMIX?** The classic "simple IMIX" (avg ~354 B) dates to the early-2000s web.
+> Modern traffic skews **larger** — video/CDN plus TSO/GRO make it bimodal (many small ACKs +
+> lots of full 1500 B / jumbo segments), so backbone averages today run higher (~800–1000 B+).
+> IMIX is still a useful *standard* reference, but it under-states a 2020s network's mean frame;
+> here it lands the same 400 G as pure 1500 B because both are already bandwidth-bound well below
+> the engine.
+
+Drive the sweep with `flame/conf/maxtx_push.py` — `PROFILE=imix`, or `PKTSIZE=64|1500`.
 
 ### Scaling beyond 558 — more cards?
 
