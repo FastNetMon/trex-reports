@@ -15,3 +15,16 @@ lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (4 ports 2 per card),quad-port-2instance-s
 lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (4 ports 2 per card),quad-port-2instance-randsrc,4,64,68,512.0,90,TX,same 4 ports with per-packet random-src field engine (DUT RSS profile); CPU-bound ~9% below static; all 14 workers/card
 lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (4 ports 2 per card),quad-port-2instance,4,1500,1524,32.68,100,TX,1500B all 4 ports = ~400 Gbps (8.17 Mpps/port = 100G line rate); bandwidth-bound not engine; link-capped (mult=200% unchanged); ~1 worker/port
 lava1,AMD Ryzen 9 9950X,2x ConnectX-7 (4 ports 2 per card),quad-port-2instance-imix,4,354,374,131.74,100,TX,IMIX 7:4:1 of 64/570/1518 (avg 354B) all 4 ports = ~398 Gbps (32.9 Mpps/port = 100G line rate); bandwidth-bound; PROFILE=imix
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),single-port,1,60,64,300.0,50,TX,CX-8 packet-rate ceiling; unchanged with 10-30 TRex workers / mlx5 devargs / iommu=pt; peer delivers 268.8 to memory
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),dual-port-1instance,2,60,64,300.0,25,TX,150+150; same per-card ceiling; peer delivers 290.5 to memory
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),single-port,1,124,128,200.0,59,TX,fits Mpps x (frame+64B) = 38.4 GB/s; 2 ports same 200
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),single-port,1,252,256,120.0,66,TX,2 ports same 120
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),single-port,1,508,512,65.1,69,TX,277 Gbps L1
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),dual-port-1instance,2,508,512,85.9,46,TX,365 Gbps L1 total
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),single-port,1,1514,1518,32.2,99,TX,396 Gbps L1
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),dual-port-1instance,2,1514,1518,33.4,51,TX,~400-411 Gbps L1 total = ~one Gen5 x16 link
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),dual-port-randomised,2,64,68,180.0,16,TX,per-packet randomised attack profile; TRex CPU-bound ~180 total
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),single-port,1,4092,4096,10.95,90,TX,361 Gbps L1; jumbo slower than 1518B (multi-segment mbufs)
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),dual-port-1instance,2,4092,4096,11.63,48,TX,383 Gbps L1 total
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),single-port,1,8996,9000,4.63,84,TX,334 Gbps L1
+alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),dual-port-1instance,2,8996,9000,4.91,44,TX,354 Gbps L1 total; max-bandwidth peak is 1518B 2-port ~400-411 Gbps = PCIe Gen5 x16 bound

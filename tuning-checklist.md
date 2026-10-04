@@ -1,6 +1,6 @@
 # Tuning checklist — host + NIC tweaks for 64 B line rate
 
-Applied on both generators. In rough order of impact.
+Applied on all generators. In rough order of impact.
 
 ## NIC (mlx5 / ConnectX)
 
@@ -9,6 +9,8 @@ Applied on both generators. In rough order of impact.
 | **CQE compression = AGGRESSIVE** | `mlxconfig -y -d <pci> set CQE_COMPRESSION=1` | Halves RX completion (CQE) traffic — the single biggest small-packet win. Persists in NIC NV config. |
 | Link speed forced, autoneg off | `ethtool -s <if> speed 100000 autoneg off` | Pins 100 G when a 200 G port links to a 100 G peer. |
 | Pause frames off | `ethtool -A <if> rx off tx off` | No flow-control back-pressure skewing the TX rate. |
+| PCIe relaxed write ordering (ConnectX-8) | `mlxconfig -y -d <pci> set PCI_WR_ORDERING=1` (`force_relax`) | Set on the alice/bob CX-8 cards alongside CQE compression. |
+| Port MTU ≤ 9000 (ConnectX-8) | `port_mtu : 9000` in `trex_cfg.yaml` | TRex's default 65518 is rejected by the CX-8 and the port fails to start. |
 | Flush kernel IPs | `ip addr flush dev <if>` | Bifurcated driver shares the NIC with the kernel; a kernel IP interferes with the DPDK queues. |
 
 ## CPU / power
@@ -22,7 +24,7 @@ Applied on both generators. In rough order of impact.
 
 | Tweak | Command | Why |
 |-------|---------|-----|
-| MaxReadRequest → 1024 B | `setpci -s <pci> cap_exp+0x8.w=<val>` | Larger read bursts; measured +~1 Mpps on the high-cardinality profiles. |
+| MaxReadRequest → 1024 B | `setpci -s <pci> cap_exp+0x8.w=<val>` | Larger read bursts; measured +~1 Mpps on the high-cardinality profiles. NVIDIA's CX-8 DPDK report uses 4096 B (untested here). |
 
 ## Memory / scheduler
 
@@ -36,6 +38,9 @@ Applied on both generators. In rough order of impact.
 
 Optional (needs GRUB edit + reboot): `nohz_full=<cores> rcu_nocbs=<cores> rcu_nocb_poll`
 on the TRex worker cores — removes the kernel timer tick, reducing scheduler jitter.
+
+`iommu=pt` (IOMMU passthrough): tried on alice/bob — **no change** to TRex's 300 Mpps, but it is
+DPDK's recommended setting and harmless on a dedicated generator.
 
 ## BIOS settings (AMD Ryzen / EPYC generators)
 
@@ -73,3 +78,5 @@ Verify at runtime: `LnkSta` in `lspci -vvv` for the negotiated PCIe gen/width, a
   rate where a 2.1 GHz dual-Xeon with 36 threads tops out ~135 Mpps.
 - Master + latency threads sit on one physical core and its HT sibling; data-plane workers
   get the rest (one instance per port pair, disjoint cores — see [lava1.md](lava1.md)).
+- Past the NIC's packet-rate ceiling, more cores do nothing: a ConnectX-8 sends the same
+  300 Mpps with 10, 16, 20 or 30 workers (see [alice-bob.md](alice-bob.md#why-300-mpps)).

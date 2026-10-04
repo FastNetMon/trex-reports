@@ -2,12 +2,13 @@
 
 Detailed [TRex](https://trex-tgn.cisco.com/) configurations, host tuning, and
 measured peak rates for generating **64-byte line-rate traffic** on commodity
-hardware. Two generators are documented:
+hardware. Three generators are documented:
 
 | Generator | CPU | NIC | Peak (64 B) |
 |-----------|-----|-----|-------------|
 | **[flame1](flame1.md)** | AMD Ryzen 7 5800X (8C/16T) | ConnectX-5 Ex, dual-port 100 G | **142 Mpps** single-port (100 % line rate) |
 | **[lava1](lava1.md)**   | AMD Ryzen 9 9950X (16C/32T, Zen 5) | **2× ConnectX-7** (both ports each → server1 + Mikrotik) | **~282 Mpps** at 2×100 G line rate · **~558 Mpps** total (4 ports, 98 % of 400 G) · **400 G @ 1500 B** |
+| **[alice / bob](alice-bob.md)** | AMD Ryzen 9 9950X (16C/32T, Zen 5) | **1× ConnectX-8**, dual-port 400 G, back-to-back pair | **300 Mpps** per card (1 or 2 ports) = CX-8 packet-rate ceiling · ~400 Gbps @ 1518 B |
 
 ## What "line rate" means at 64 B
 
@@ -17,7 +18,7 @@ is **142.05 Mpps** (not 148.8, which needs 64 B *including* FCS). See
 
 ## Test topology
 
-Generator and receiver are cabled **back-to-back** (no switch). Two setups.
+Generator and receiver are cabled **back-to-back** (no switch). Three setups.
 
 **1. flame1 — 100 G, single-port.** One port floods; the other is an RX sink for what
 the receiver forwards back (the 64 B line-rate case).
@@ -62,6 +63,25 @@ flowchart LR
   B0 == "100 G" ==> M
 ```
 
+**3. alice / bob — 1× ConnectX-8 each, 2×400 G back-to-back.** A symmetric pair: two identical
+hosts cabled port-to-port, so either one generates and the other receives (TRex on both, the
+receiver only counting). One card sends **300 Mpps at 64 B** on one port or split 150 + 150
+over two — the CX-8 packet-rate ceiling — and ~400 Gbps at 1518 B.
+
+```mermaid
+flowchart LR
+  subgraph GA["bob — ConnectX-8 (generator)"]
+    B0["p0 · 01:00.0"]
+    B1["p1 · 01:00.1"]
+  end
+  subgraph GB["alice — ConnectX-8 (receiver)"]
+    A0["p0 · 01:00.0"]
+    A1["p1 · 01:00.1"]
+  end
+  B0 == "400 GbE" ==> A0
+  B1 == "400 GbE" ==> A1
+```
+
 ### Cores per port
 
 At the **peak all-four-port config (static 64 B, ~558 Mpps)** each 100 G port needs only
@@ -95,7 +115,8 @@ all 14 workers/card and caps ~9 % lower (~512 Mpps) — see
 - **Clock beats core count** — the 5.7 GHz Ryzen with 14 threads hits line rate where a
   2.1 GHz dual-Xeon with 36 threads tops out ~135 Mpps.
 - **One dual-port NIC never doubles at 64 B.** Both ports share one packet engine:
-  ConnectX-5 tops ~197 Mpps aggregate, ConnectX-7 ~278 Mpps — regardless of host.
+  ConnectX-5 tops ~197 Mpps aggregate, ConnectX-7 ~278 Mpps, ConnectX-8 ~300 Mpps — regardless
+  of host.
 - **One TRex instance cannot dedicate cores per port.** With both ports in one instance
   every core services two TX rings and the aggregate stalls near **185 Mpps**. The fix is
   **two TRex instances**, each owning one real port with disjoint cores — see
@@ -128,23 +149,32 @@ all 14 workers/card and caps ~9 % lower (~512 Mpps) — see
   Full 400 G at 64 B needs **2× ConnectX-8** (~300/card → ~600) or **≥3× CX-7 on a
   higher-lane/-core host** (3× ≈ 837, 4× ≈ 1116 Mpps) — see
   [lava1.md](lava1.md#scaling-beyond-558--more-cards).
+- **ConnectX-8 confirmed at ~300 Mpps per card.** One CX-8 at 400 G sends **300 Mpps at 64 B**
+  on one port or two (150 + 150). TRex cores (10–30), eight mlx5 devarg variants and IOMMU
+  passthrough don't move it, and NVIDIA's DPDK 25.03 report shows the same flat ~300 Mpps from
+  64 to 256 B with two PCIe x16 links — it is the card's packet rate. 128 / 256 B reach only
+  200 / 120 Mpps on one Gen5 x16 link; large frames ~400 Gbps per card — see
+  [alice-bob.md](alice-bob.md#why-300-mpps).
 
 ## Repository layout
 
 **Reports & tuning**
 - [`flame1.md`](flame1.md) — Ryzen 5800X + ConnectX-5, single-port 100 G line rate.
 - [`lava1.md`](lava1.md) — Ryzen 9950X + ConnectX-7, single- and dual-port; the split-core two-instance setup for ~278 Mpps.
-- [`tuning-checklist.md`](tuning-checklist.md) — host + NIC tweaks and BIOS settings common to both.
+- [`alice-bob.md`](alice-bob.md) — Ryzen 9950X + ConnectX-8 pair at 400 G; frame-size sweep and why 300 Mpps is the card's ceiling.
+- [`tuning-checklist.md`](tuning-checklist.md) — host + NIC tweaks and BIOS settings common to all generators.
 - [`METHODOLOGY.md`](METHODOLOGY.md) — what we measure, the 64 B frame convention, how a run is taken, determinism.
 - [`results.csv`](results.csv) — all measured rates in machine-readable form.
 
 **TRex platform configs** — the ready-to-use `/etc/trex_cfg.yaml` for each machine is
-shown inline in [`flame1.md`](flame1.md) and [`lava1.md`](lava1.md) (single- and dual-instance).
+shown inline in [`flame1.md`](flame1.md), [`lava1.md`](lava1.md) (single- and dual-instance) and
+[`alice-bob.md`](alice-bob.md) (ConnectX-8, TRex built from source).
 
 ## Quick start
 
 ```bash
-# 1. install a platform config — copy the YAML from lava1.md / flame1.md
+# 1. install a platform config — copy the YAML from lava1.md / flame1.md / alice-bob.md
+#    (ConnectX-8 needs TRex built from trex-core master — see alice-bob.md)
 #    to /etc/trex_cfg.yaml
 # 2. host/NIC tuning — see tuning-checklist.md
 # 3. start TRex

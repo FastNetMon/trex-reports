@@ -29,6 +29,10 @@ The **148.8 Mpps** figure only applies to canonical 64-B-*including*-FCS frames
    from `get_stats` over ~10–35 s and average.
 4. For dual-port, drive both instances from one client and hold traffic while
    sampling (so host-side counters can be read in parallel).
+5. **Pair test (alice / bob):** TX and RX are read from the **NIC port counters** of both
+   hosts (`tx_packets_phy` on the sender, `rx_packets_phy`, `rx_discards_phy` and
+   `rx_out_of_buffer` on the receiver) over a 10 s window after an 8 s warm-up, so the
+   receiver's own losses before host memory are visible too.
 
 ## Determinism / variance
 
@@ -39,6 +43,13 @@ The **148.8 Mpps** figure only applies to canonical 64-B-*including*-FCS frames
 - Source IPs are randomised across a /16 so the receiver's L3-src RSS spreads
   traffic evenly across all RX queues (measured flatter than hand-picked
   per-queue IPs — CoV ~0.1 %).
+
+## Driver path (ConnectX)
+
+All generators here are NVIDIA ConnectX cards driven by DPDK's **mlx5 PMD**, which runs on the
+**RDMA verbs stack** (rdma-core / `ib_uverbs`, no VFIO/UIO) with a kernel-bypass datapath —
+TRex has no separate RDMA mode, so the reported rates already are verbs-path rates. See
+[alice-bob.md](alice-bob.md#trex-and-rdma).
 
 ## Caveats
 

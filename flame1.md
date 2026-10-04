@@ -72,5 +72,5 @@ port is the practical minimum.
 
 ## Tweaks
 
-Host + NIC tuning is common to both generators — see [tuning-checklist.md](tuning-checklist.md).
+Host + NIC tuning is common to all generators — see [tuning-checklist.md](tuning-checklist.md).
 The single biggest one is NIC **CQE compression = AGGRESSIVE**.
