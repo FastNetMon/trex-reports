@@ -2,6 +2,11 @@
 
 Single-port 100 GbE, 64-byte line rate (142 Mpps).
 
+> **Since changed (verified 2026-10-06):** flame1 now carries a **ConnectX-7** dual-port NIC
+> (`2b:00.0`/`2b:00.1`, `enp43s0f0np0`/`enp43s0f1np1`, firmware 28.44.1036, links at 200 G,
+> PCIe 16 GT/s x16), cabled to server1, on kernel 6.8.0-139. Everything below describes the
+> ConnectX-5 Ex configuration it was measured on.
+
 ## Server configuration
 
 | Item | Value |

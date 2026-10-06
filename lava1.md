@@ -1,6 +1,11 @@
 # lava1 — Ryzen 9950X + 2× ConnectX-7
 
-**Current config (2026-07-22):** two *separate* CX-7 cards, **both ports of each cabled** —
+> **Since changed (verified 2026-10-06):** lava1 now carries **2× ConnectX-5 Ex** (100 G,
+> `01:00.x` and `02:00.x`, firmware 16.35.4030, PCIe Gen4 x8 each), with the `.0` ports cabled
+> to the BlueField-3 in epyc-sp5 and kernel 6.8.0-139. Everything below describes the
+> ConnectX-7 configuration it was measured on.
+
+**Config at the time of measurement (2026-07-22):** two *separate* CX-7 cards, **both ports of each cabled** —
 the `.1` ports to server1's two CX-5 cards, the `.0` ports to a Mikrotik CRS504 switch.
 Two engines reach **~282 Mpps = 100 % of 2×100 G** at 64 B on the server1 pair (see
 [Two cards](#two-cards--200-g-at-true-line-rate-2-connectx-7)); driving **all four ports**
