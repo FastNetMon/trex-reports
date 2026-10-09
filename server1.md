@@ -72,7 +72,7 @@ Each row is the median of three 20 s trials. **sent** is `tx_packets_phy` on ser
 - **One ConnectX-5 Ex card sends ~200 Mpps** whether one or both ports run, about
   100 Mpps per port when both do. A single port reaches its 148.8 Mpps line rate, which is
   why the BlueField-3 is fed from two separate ConnectX-5 cards.
-- **The 893 Mpps repeats**: the six-port stage of three later full runs (2026-10-09, reports
+- **The 893 Mpps repeats**: the six-port stage of all three full runs on 2026-10-09 (reports `2026-10-09_1017`,
   `2026-10-09_1110` and `2026-10-09_1331` in fastacl-testbench) sent 890–893 Mpps. Single
   10-second runs in between sometimes reached only 715–780 Mpps, with the ConnectX-7 ports at
   136–167 Mpps instead of ~198; no PAUSE frames were exchanged and the cause is not known.
