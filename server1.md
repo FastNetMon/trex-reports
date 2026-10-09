@@ -72,10 +72,22 @@ Each row is the median of three 20 s trials. **sent** is `tx_packets_phy` on ser
 - **One ConnectX-5 Ex card sends ~200 Mpps** whether one or both ports run, about
   100 Mpps per port when both do. A single port reaches its 148.8 Mpps line rate, which is
   why the BlueField-3 is fed from two separate ConnectX-5 cards.
+- **The 893 Mpps repeats**: the six-port stage of three later full runs (2026-10-09, reports
+  `2026-10-09_1110` and `2026-10-09_1331` in fastacl-testbench) sent 890–893 Mpps. Single
+  10-second runs in between sometimes reached only 715–780 Mpps, with the ConnectX-7 ports at
+  136–167 Mpps instead of ~198; no PAUSE frames were exchanged and the cause is not known.
+  Run several trials and use the median.
 - **One ConnectX-7 port sends ~260 Mpps** with the pair's 16 cores to itself, and
   ~223 per port when both ConnectX-7 share those cores. With all six ports busy each drops
   to ~198. Not yet separated: TRex cores against the Rome host's I/O die. lava1's dual-port
   ConnectX-7 reached ~279 Mpps per card in July (see [lava1](lava1.md)).
+
+## What the receiver needed
+
+The generator side was straightforward once the gotchas below were handled. Taking 890 Mpps
+in was the hard part: on the EPYC 9534 receiver, VPP dropped only 148 Mpps with 62 workers until
+the BIOS went from one NUMA node per socket (NPS1) to four (NPS4), then 450 Mpps. Details in
+fastacl-testbench `docs/lab.md` ("Tuning epyc-sp5").
 
 ## Gotchas
 
@@ -85,8 +97,9 @@ Each row is the median of three 20 s trials. **sent** is `tx_packets_phy` on ser
 - **Mixed ConnectX-5 / ConnectX-7 ports break `STLClient.reset()`**: it fails with
   "Length of get_xstats_names: 102 and get_port_xstats_values: 87". Use `stop()` plus
   `remove_all_streams()` instead.
-- **One ConnectX-5 to ConnectX-8 100 G DAC links only with autonegotiation off** on both ends
-  (`ethtool -s <if> speed 100000 duplex full autoneg off`); the other identical cable
-  negotiates normally.
+- **The ConnectX-5 to ConnectX-8 100 G DACs need autonegotiation off** on both ends
+  (`ethtool -s <if> speed 100000 duplex full autoneg off`). One of the two links never came up
+  with autonegotiation; the other came up at first and dropped after the receiver rebooted.
+  Forcing both is reliable.
 
 The orchestration (stages, counters) is `labs/hw/platform-ceiling.sh` in fastacl-testbench.
