@@ -28,3 +28,10 @@ alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),single-port,1,4092,4096,1
 alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),dual-port-1instance,2,4092,4096,11.63,48,TX,383 Gbps L1 total
 alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),single-port,1,8996,9000,4.63,84,TX,334 Gbps L1
 alice/bob,AMD Ryzen 9 9950X,ConnectX-8 400G (Gen5 x16),dual-port-1instance,2,8996,9000,4.91,44,TX,354 Gbps L1 total; max-bandwidth peak is 1518B 2-port ~400-411 Gbps = PCIe Gen5 x16 bound
+server1,AMD EPYC 7742,ConnectX-7 200G (Gen4 x16),single-port,1,60,64,258.3,87,TX,ConnectX-7 #1 alone; 16 TRex cores per port pair
+server1,AMD EPYC 7742,ConnectX-7 200G (Gen4 x16),single-port,1,60,64,264.3,89,TX,ConnectX-7 #2 alone
+server1,AMD EPYC 7742,ConnectX-5 Ex 100G (Gen4 x16),dual-port-1instance,2,60,64,199.7,67,TX,one card both ports ~99.8 each
+server1,AMD EPYC 7742,2x ConnectX-5 Ex 100G (Gen4 x16),2-cards-1-port-each,2,60,64,297.6,100,TX,148.8 per port = line rate
+server1,AMD EPYC 7742,2x ConnectX-7 200G (Gen4 x16),2-cards-1-port-each,2,60,64,447.1,75,TX,223.5 per port; 16 cores shared by the pair
+server1,AMD EPYC 7742,2x ConnectX-7 + 1x ConnectX-5 Ex,4-ports-1instance,4,60,64,631.9,,TX,216+216+99.9+99.9
+server1,AMD EPYC 7742,2x ConnectX-7 + 3x ConnectX-5 Ex,6-ports-1instance,6,60,64,892.5,,TX,198+198+99.9+99.9+148+148; 48 TRex cores
