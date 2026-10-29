@@ -9,7 +9,7 @@ hardware. Three generators are documented:
 | **[flame1](flame1.md)** | AMD Ryzen 7 5800X (8C/16T) | ConnectX-5 Ex, dual-port 100 G | **142 Mpps** single-port (100 % line rate) |
 | **[lava1](lava1.md)**   | AMD Ryzen 9 9950X (16C/32T, Zen 5) | **2× ConnectX-7** (both ports each → server1 + Mikrotik) | **~282 Mpps** at 2×100 G line rate · **~558 Mpps** total (4 ports, 98 % of 400 G) · **400 G @ 1500 B** |
 | **[alice / bob](alice-bob.md)** | AMD Ryzen 9 9950X (16C/32T, Zen 5) | **1× ConnectX-8**, dual-port 400 G, back-to-back pair | **300 Mpps** per card (1 or 2 ports) = CX-8 packet-rate ceiling · ~400 Gbps @ 1518 B |
-| **[server1](server1.md)** | AMD EPYC 7742 (64C/128T, Zen 2) | **2× ConnectX-7** (200 G) + **3× ConnectX-5 Ex** (100 G), six ports, one TRex | **893 Mpps** total (six ports) · ConnectX-7 ~260 per port alone · ConnectX-5 ~200 per card |
+| **[server1](server1.md)** | AMD EPYC 7742 (64C/128T, Zen 2) | **2× ConnectX-7** (200 G) + **BlueField-3** (400 G, NIC mode) since 2026-10-28; until then 2× ConnectX-7 + 3× ConnectX-5 Ex | **560 Mpps** from the two ConnectX-7 (280 per port) · **729 Mpps** with the BlueField-3 · **400 Gbps @ 1500 B** (410 with all three: host limit) · was **893 Mpps** over six ports |
 
 > **Lab hardware has changed since these reports — verified on the hosts 2026-10-06.**
 > The measurements below stand as records of the hardware they were taken on; the hosts
@@ -19,7 +19,7 @@ hardware. Three generators are documented:
 > |------|--------------------|------------------|
 > | flame1 | ConnectX-5 Ex dual-port 100 G (`26:00.x`), PCIe 3.0 | **ConnectX-7** dual-port, links at 200 G (`2b:00.x`, `enp43s0f0np0`/`f1np1`, fw 28.44.1036), PCIe 16 GT/s x16; cabled to server1 |
 > | lava1 | 2× ConnectX-7 → server1 and a Mikrotik CRS504 | **2× ConnectX-5 Ex** 100 G (`01:00.x`, `02:00.x`, fw 16.35.4030), PCIe Gen4 **x8** each; the `.0` ports cabled to the BlueField-3 in epyc-sp5, the `.1` ports unused |
-> | server1 | 2× ConnectX-5 Ex (`01:00.1`, `81:00.1`) | **2× ConnectX-7** (200 G) + **3× ConnectX-5 Ex**, since 2026-10-09 the six-port generator for epyc-sp5, see [server1](server1.md) |
+> | server1 | 2× ConnectX-5 Ex (`01:00.1`, `81:00.1`) | **2× ConnectX-7** (200 G, through a MikroTik) + **BlueField-3** in NIC mode since 2026-10-28, feeding epyc-sp5's socket-direct ConnectX-8; 2026-10-09 to 10-28 the six-port generator with 3× ConnectX-5 Ex, see [server1](server1.md) |
 >
 > Re-run before reusing a figure on the current hardware.
 
