@@ -9,6 +9,24 @@ port 0. The three ConnectX-5 Ex are no longer cabled. Measured 2026-10-29.
 rate) when TRex gives them all its cores; **729–759 Mpps** with the BlueField-3 added; **400 Gbps at
 1500 B** from the two ConnectX-7 (100 % of 2×200 G).
 
+```mermaid
+flowchart LR
+  subgraph S1["server1 — EPYC 7742 · one TRex"]
+    C1["0 · ConnectX-7 #1 · 81:00.0"]
+    C2["1 · ConnectX-7 #2 · c2:00.1"]
+    BF["2 · BlueField-3 · 84:00.0"]
+  end
+  SW["MikroTik switch"]
+  subgraph RX["epyc-sp5 — ConnectX-8, socket direct"]
+    P1["port 1 · 01:00.1 + 02:00.1"]
+    P0["port 0 · 01:00.0 + 02:00.0"]
+  end
+  C1 == "200 G" ==> SW
+  C2 == "200 G" ==> SW
+  SW == "400 G optics" ==> P1
+  BF == "400 G DAC" ==> P0
+```
+
 | TRex port | Card | PCI | Firmware | PCIe | Link | Receiver port |
 |---|---|---|---|---|---|---|
 | 0 | ConnectX-7 #1 | `81:00.0` | 28.44.1036 | Gen4 x16 | 200 G, to the MikroTik | ConnectX-8 port 1, function `01:00.1` |

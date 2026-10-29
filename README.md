@@ -31,7 +31,7 @@ is **142.05 Mpps** (not 148.8, which needs 64 B *including* FCS). See
 
 ## Test topology
 
-Generator and receiver are cabled **back-to-back** (no switch). Three setups.
+Generator and receiver are cabled **back-to-back** (no switch), except setup 4, where a MikroTik switch joins two generator ports into one 400 G receiver port. Four setups.
 
 **1. flame1 — 100 G, single-port.** One port floods; the other is an RX sink for what
 the receiver forwards back (the 64 B line-rate case).
@@ -93,6 +93,30 @@ flowchart LR
   end
   B0 == "400 GbE" ==> A0
   B1 == "400 GbE" ==> A1
+```
+
+**4. server1 — 2× ConnectX-7 + BlueField-3 into one socket-direct ConnectX-8 (since 2026-10-28).**
+Both ConnectX-7 go through a MikroTik switch into ConnectX-8 port 1, and the BlueField-3 (NIC mode)
+goes straight into port 0. One TRex drives them: **560 Mpps at 64 B** from the two ConnectX-7
+(280 per port), **400 Gbps at 1500 B**; with the BlueField-3 729–759 Mpps, and ~410 Gbps at most
+at 1500 B (server1's limit). The receiver is epyc-sp5 (FastACL); see [server1](server1.md).
+
+```mermaid
+flowchart LR
+  subgraph S1["server1 — EPYC 7742 · one TRex"]
+    C1["ConnectX-7 #1 · 81:00.0"]
+    C2["ConnectX-7 #2 · c2:00.1"]
+    BF["BlueField-3 (NIC mode) · 84:00.0<br/>PCIe Gen4 ≈ 200 Gbps"]
+  end
+  SW["MikroTik switch"]
+  subgraph RX4["epyc-sp5 — ConnectX-8, socket direct (2× Gen5 x16)"]
+    P1["port 1 · 01:00.1 + 02:00.1"]
+    P0["port 0 · 01:00.0 + 02:00.0"]
+  end
+  C1 == "200 G · 280 Mpps" ==> SW
+  C2 == "200 G · 280 Mpps" ==> SW
+  SW == "400 G optics · 560 Mpps" ==> P1
+  BF == "400 G DAC" ==> P0
 ```
 
 ### Cores per port
