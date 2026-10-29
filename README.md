@@ -9,7 +9,7 @@ hardware. Three generators are documented:
 | **[flame1](flame1.md)** | AMD Ryzen 7 5800X (8C/16T) | ConnectX-5 Ex, dual-port 100 G | **142 Mpps** single-port (100 % line rate) |
 | **[lava1](lava1.md)**   | AMD Ryzen 9 9950X (16C/32T, Zen 5) | **2× ConnectX-7** (both ports each → server1 + Mikrotik) | **~282 Mpps** at 2×100 G line rate · **~558 Mpps** total (4 ports, 98 % of 400 G) · **400 G @ 1500 B** |
 | **[alice / bob](alice-bob.md)** | AMD Ryzen 9 9950X (16C/32T, Zen 5) | **1× ConnectX-8**, dual-port 400 G, back-to-back pair | **300 Mpps** per card (1 or 2 ports) = CX-8 packet-rate ceiling · ~400 Gbps @ 1518 B |
-| **[server1](server1.md)** | AMD EPYC 7742 (64C/128T, Zen 2) | **2× ConnectX-7** (200 G) + **BlueField-3** (400 G, NIC mode) since 2026-10-28; until then 2× ConnectX-7 + 3× ConnectX-5 Ex | **560 Mpps** from the two ConnectX-7 (280 per port) · **729 Mpps** with the BlueField-3 · **400 Gbps @ 1500 B** (410 with all three: host limit) · was **893 Mpps** over six ports |
+| **[server1](server1.md)** | AMD EPYC 7742 (64C/128T, Zen 2) | **2× ConnectX-7** (200 G) + **BlueField-3** (400 G, NIC mode) since 2026-10-28; until then 2× ConnectX-7 + 3× ConnectX-5 Ex | **560 Mpps** from the two ConnectX-7 (280 per port) · **729–759 Mpps** with the BlueField-3 · **400 Gbps @ 1500 B** (410 with all three: host limit) · was **893 Mpps** over six ports |
 
 > **Lab hardware has changed since these reports — verified on the hosts 2026-10-06.**
 > The measurements below stand as records of the hardware they were taken on; the hosts

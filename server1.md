@@ -6,7 +6,7 @@ two functions per port): both ConnectX-7 through a MikroTik switch into ConnectX
 port 0. The three ConnectX-5 Ex are no longer cabled. Measured 2026-10-29.
 
 **Headline:** **560 Mpps at 64 B from the two ConnectX-7** (280 per port, 94 % of 200 G line
-rate) when TRex gives them all its cores; **729 Mpps** with the BlueField-3 added; **400 Gbps at
+rate) when TRex gives them all its cores; **729–759 Mpps** with the BlueField-3 added; **400 Gbps at
 1500 B** from the two ConnectX-7 (100 % of 2×200 G).
 
 | TRex port | Card | PCI | Firmware | PCIe | Link | Receiver port |
@@ -30,7 +30,7 @@ Gbps is the rate on the wire, (frame + 20 B) × 8 per packet.
 | ConnectX-7 #1 alone | 2 ports, `-c 46` | 64 B | 280.0 Mpps | 280.0 | 94 % of 200 G |
 | ConnectX-7 #2 alone | 2 ports, `-c 46` | 64 B | 280.0 Mpps | 280.0 | 94 % of 200 G |
 | **both ConnectX-7** | 2 ports, `-c 46` | 64 B | **560.0 Mpps** | 280.0 + 280.0 | 94 % of 2×200 G |
-| both ConnectX-7 + BlueField-3 | 4 ports, `-c 24` | 64 B | **729.5 Mpps** | 240.6 + 240.6 + 248.2 | |
+| both ConnectX-7 + BlueField-3 | 4 ports, `-c 24` | 64 B | **729.5–758.9 Mpps** | 240.6–256.3 per ConnectX-7 + 246.4–248.2 | |
 | **both ConnectX-7** | 4 ports, `-c 24` | 1500 B | 32.9 Mpps = **400 Gbps** | 16.4 + 16.4 | 100 % |
 | BlueField-3 alone | 4 ports, `-c 24` | 1500 B | 16.4 Mpps = 200 Gbps | 16.4 | 50 % of 400 G (PCIe Gen4) |
 | both ConnectX-7 + BlueField-3 | 4 ports, `-c 24` | 1500 B | 33.7 Mpps = **410 Gbps** | 11.2 + 11.2 + 11.3 | |
@@ -43,13 +43,14 @@ Gbps is the rate on the wire, (frame + 20 B) × 8 per packet.
   gets half.
 - **server1 sends ~410 Gbps at most in large frames**: the two ConnectX-7 alone reach 400 Gbps,
   and adding the BlueField-3 only redistributes it (11.2 + 11.2 + 11.3 Mpps). At 64 B the three
-  cards send 729 Mpps (~370 Gbps of frame bytes). The host (Rome I/O die, memory) is the
+  cards send 729–759 Mpps (~370–390 Gbps of frame bytes). The host (Rome I/O die, memory) is the
   likely limit; a second generator host is needed to fill both 400 G ports of the ConnectX-8.
 - **The MikroTik forwards everything it gets**: 560 Mpps of 64 B in, all of it counted by the
   ConnectX-8 port (`rx_packets_phy`). The receiver must not send PAUSE frames (see Gotchas).
 
 Receiver side (what the ConnectX-8 and VPP did with it): fastacl-testbench reports
-`2026-10-29_0819_epyc-sd-pps_platform` and `2026-10-29_0837_epyc-sd_platform`.
+`2026-10-29_1215_epyc-sd-pps_platform` and `2026-10-29_1234_epyc-sd_platform` (the ConnectX-8 port
+takes in ~226 Mpps of the 560 and FastACL drops all of it; 400 Gbps at 1500 B with no loss).
 
 ## Before 2026-10-28: six ports, 2× ConnectX-7 + 3× ConnectX-5 Ex
 

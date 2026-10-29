@@ -37,7 +37,7 @@ server1,AMD EPYC 7742,2x ConnectX-7 + 1x ConnectX-5 Ex,4-ports-1instance,4,60,64
 server1,AMD EPYC 7742,2x ConnectX-7 + 3x ConnectX-5 Ex,6-ports-1instance,6,60,64,892.5,,TX,198+198+99.9+99.9+148+148; 48 TRex cores
 server1,AMD EPYC 7742,ConnectX-7 200G (Gen4 x16),single-port,1,60,64,280.0,94,TX,2026-10-29; ConnectX-7 #1 alone via MikroTik; TRex 2 ports -c 46; same 280.0 on #2
 server1,AMD EPYC 7742,2x ConnectX-7 200G (Gen4 x16),2-cards-1-port-each,2,60,64,560.0,94,TX,2026-10-29; 280+280 into one ConnectX-8 400G port via MikroTik; TRex -c 46 for the pair
-server1,AMD EPYC 7742,2x ConnectX-7 + BlueField-3 (NIC mode),3-ports-1instance,3,60,64,729.5,,TX,2026-10-29; 240.6+240.6+248.2; TRex 4 ports -c 24
+server1,AMD EPYC 7742,2x ConnectX-7 + BlueField-3 (NIC mode),3-ports-1instance,3,60,64,758.9,,TX,2026-10-29; 256.3+256.3+246.4 (729.5 in an earlier run); TRex 4 ports -c 24
 server1,AMD EPYC 7742,2x ConnectX-7 200G (Gen4 x16),2-cards-1-port-each,2,1496,1500,32.9,100,TX,2026-10-29; 400 Gbps on the wire
 server1,AMD EPYC 7742,BlueField-3 400G (Gen4 x16),single-port,1,1496,1500,16.4,50,TX,2026-10-29; 200 Gbps: PCIe Gen4 x16 slot
 server1,AMD EPYC 7742,2x ConnectX-7 + BlueField-3 (NIC mode),3-ports-1instance,3,1496,1500,33.7,,TX,2026-10-29; 410 Gbps total = host limit; 11.2+11.2+11.3
